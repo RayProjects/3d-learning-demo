@@ -1,21 +1,10 @@
 <html>
 
 <head>
-	<title>Model Demo</title>
+	<title>3D Model Demo</title>
 	<style>
 		body {
 			margin: 0;
-		}
-
-		.landscape {
-			background: url(data/rotate.png) no-repeat;
-			width: 400px;
-			height: 400px;
-			background-size: cover;
-			position: absolute;
-			top: 50%;
-			left: 50%;
-			transform: translate3d(-50%, -50%, 0);
 		}
 
 		canvas {
@@ -52,9 +41,11 @@
 		var container, helper;
 		var scene, camera, renderer;
 		var controls, mixer, mixers = [],
-			bird, ambientLight, pointLight, plane;
+			bird, ambientLight, pointLight, plane, client, mouse, intervalChange;
 		var geometry, treeBottomGroup = [],
-			temp, gltfLoader, t = 0;
+			temp, gltfLoader, t = 0,
+			building, buildingBottom, selectMesh, current3VPoint, raycaster;
+		var des;
 		var clock = new THREE.Clock();
 
 		init();
@@ -77,7 +68,9 @@
 
 			window.addEventListener('resize', onWindowResize, false);
 
-			createUI();
+			document.addEventListener('mousedown', onDocumentMouseDown, false);
+
+			//createUI();
 			animate();
 
 		}
@@ -109,6 +102,11 @@
 			camera.position.set(125, 450, 1215);
 			renderer = new THREE.WebGLRenderer();
 
+			raycaster = new THREE.Raycaster();
+			client = new THREE.Vector2();
+			mouse = new THREE.Vector2();
+			intervalChange = new THREE.Vector3();
+
 			container = $('<div id="sceneContainer"></div>');
 			$('body').append(container);
 
@@ -127,6 +125,92 @@
 
 		}
 
+		function findMeshChildren(obj, arr) {
+			if (!arr) arr = [];
+			if (obj.children) {
+				for (var i = 0; i < obj.children.length; i++) {
+					if (obj.children[i].type == 'Mesh') {
+						arr.push(obj.children[i]);
+					} else if (obj.children[i].children) {
+						arr = arr.concat(findMeshChildren(obj.children[i]));
+					}
+				}
+			}
+			return arr;
+		}
+
+		function castShadowObj(obj) {
+			var arr = findMeshChildren(obj);
+			if (obj.type == 'Mesh') obj.castShadow = obj.receiveShadow = true;
+			for (var j = 0; j < arr.length; j++) {
+				arr[j].castShadow = arr[j].receiveShadow = true;
+			}
+		}
+
+		function pickupObjects(e) {
+			//将鼠标点击位置的屏幕坐标转成threejs中的标准坐标
+			mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+			mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+			//从相机发射一条射线，经过鼠标点击位置
+			raycaster.setFromCamera(mouse, camera);
+			//计算射线相机到的对象，可能有多个对象，因此返回的是一个数组，按离相机远近排列
+			var intersects = raycaster.intersectObjects(scene.children);
+			return intersects;
+		}
+
+		function onDocumentMouseDown(event) {
+			client.x = event.clientX;
+			client.y = event.clientY;
+			var temp = pickupObjects(event);
+
+			if (temp.length) {
+				selectMesh = temp[0].object;
+				if (selectMesh.name == 'building') {
+					var currentTime = new Date().getTime();
+					if (selectMesh.lastClickTime && (currentTime - selectMesh.lastClickTime) < 500) {
+						handleBuildingFocus();
+					}
+					selectMesh.lastClickTime = currentTime;
+				}
+			}
+		}
+
+		function handleBuildingFocus() {
+			camera.moveIndex = 25;
+			des = new THREE.Vector3(400, 1100, 900);
+			var curent = camera.position;
+			intervalChange.x = -(curent.x - des.x) / 25;
+			intervalChange.y = -(curent.y - des.y) / 25;
+			intervalChange.z = -(curent.z - des.z) / 25;
+		}
+
+		function updateCamera() {
+			if (camera.moveIndex > 0) {
+				var scale = building.oriScale * camera.moveIndex / 25;
+				var scaleBottom = buildingBottom.oriScale * camera.moveIndex / 25;
+
+				building.scale.set(scale, scale, scale);
+				building.position.set(building.oriX * (camera.moveIndex / 25), 0, 0);
+
+				buildingBottom.scale.set(scaleBottom, scaleBottom, scaleBottom);
+				buildingBottom.position.set(buildingBottom.oriX * (camera.moveIndex / 25), buildingBottom.oriY * (camera
+					.moveIndex /
+					25), 0);
+
+				camera.moveIndex--;
+				camera.lookAt(scene.position);
+				camera.position.x += intervalChange.x;
+				camera.position.y += intervalChange.y;
+				camera.position.z += intervalChange.z;
+			} else if (camera.moveIndex == 0) {
+				camera.moveIndex--;
+				building.visible = false;
+				buildingBottom.visible = false;
+				bird.visible = false;
+				initComputerRoom();
+			}
+		}
+
 		function changeFov() {
 			pointLight.position.x = text.lightx;
 			pointLight.position.y = text.lighty;
@@ -143,13 +227,13 @@
 			var gui = new dat.GUI();
 			text = new FizzyText();
 
-			gui.add(text, "lightx", -1000, 1000).name("light x");
-			gui.add(text, "lighty", 0, 1400).name("light y");
-			gui.add(text, "lightz", -1000, 1000).name("light z");
+			gui.add(text, "lightx", -1000, 1000).name("聚光灯x");
+			gui.add(text, "lighty", 0, 1400).name("聚光灯y");
+			gui.add(text, "lightz", -1000, 1000).name("聚光灯z");
 		}
 
 		function initLight() {
-			ambientLight = new THREE.AmbientLight("#111111");
+			ambientLight = new THREE.AmbientLight("#666666");
 			scene.add(ambientLight);
 
 			pointLight = new THREE.SpotLight(0xffffff, 1);
@@ -163,10 +247,15 @@
 			pointLight.decay = 2;
 			scene.add(pointLight);
 
+			/* pointLight = new THREE.DirectionalLight( 0xffffff, 1.5 );
+			pointLight.position.set( 0,40,0 );
+			pointLight.position.multiplyScalar( 10 );
+			pointLight.castShadow = true;
 
-			pointLightHeper = new THREE.SpotLightHelper(pointLight, 10);
-			scene.add(pointLightHeper);
+			pointLight.shadow.mapSize.width = 4048;
+			pointLight.shadow.mapSize.height = 4048;
 
+			scene.add( pointLight ); */
 		}
 
 		function initControl() {
@@ -175,6 +264,264 @@
 			controls.target.set(0, 0, 0);
 			controls.update();
 
+		}
+
+		function initComputerRoom() {
+
+			//机房地面
+			var r = "data/computerRoom/";
+			var urls = [r + "posx.jpg", r + "negx.jpg",
+				r + "posy.jpg", r + "negz.jpg",
+				r + "posz.jpg", r + "negy.jpg"
+			];
+
+			var textureCube = THREE.ImageUtils.loadTextureCube(urls);
+			textureCube.format = THREE.RGBFormat;
+			var geometry = new THREE.BoxBufferGeometry(1300, 2, 600);
+			var material = new THREE.MeshLambertMaterial({
+				color: 0x223344,
+				envMap: textureCube,
+				opacity: 0.55,
+				transparent: true,
+				combine: THREE.MixOperation,
+				reflectivity: 0.825
+			});
+			var mesh = new THREE.Mesh(geometry, material);
+			castShadowObj(mesh);
+			mesh.position.set(-50, 2, 50);
+			scene.add(mesh);
+
+			//四周墙壁
+			new THREE.TextureLoader().load('data/dalishiWall.jpg', function (texture) {
+				texture.repeat.set(1, 1);
+				texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
+				texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+				var geometryHorizontal = new THREE.BoxBufferGeometry(800, 160, 10);
+				var wallMaterial = new THREE.MeshPhongMaterial({
+					color: 0xffffff,
+					map: texture,
+					opacity: 0.90,
+					transparent: true,
+					combine: THREE.MixOperation,
+					reflectivity: 0.9
+				});
+				//var wallMaterial = new THREE.MeshLambertMaterial( {color: 0xD4E1F1, ambient: 0xD4E1F1, combine: THREE.MixOperation, reflectivity: 0.25 });
+				var wallHorizontalInner = new THREE.Mesh(geometryHorizontal, wallMaterial);
+				wallHorizontalInner.position.set(-50, 80, 345);
+				castShadowObj(wallHorizontalInner);
+				scene.add(wallHorizontalInner);
+
+				var wallHorizontalOuter = new THREE.Mesh(geometryHorizontal, wallMaterial);
+				wallHorizontalOuter.position.set(-50, 80, -245);
+				castShadowObj(wallHorizontalOuter);
+				scene.add(wallHorizontalOuter);
+
+				var geometryVertical = new THREE.BoxBufferGeometry(590, 160, 10);
+				var wallVerticalLeft = new THREE.Mesh(geometryVertical, wallMaterial);
+				wallVerticalLeft.position.set(-445, 80, 45);
+				wallVerticalLeft.rotation.y = -Math.PI / 2;
+				castShadowObj(wallVerticalLeft);
+				scene.add(wallVerticalLeft);
+
+				var wallVerticalRight = new THREE.Mesh(geometryVertical, wallMaterial);
+				wallVerticalRight.position.set(345, 80, 45);
+				wallVerticalRight.rotation.y = -Math.PI / 2;
+				castShadowObj(wallVerticalRight);
+				scene.add(wallVerticalRight);
+			});
+
+			//四周柱子
+			var columnsPositions = [];
+
+			columnsPositions.push(new THREE.Vector3(-430, 80, -230));
+			columnsPositions.push(new THREE.Vector3(-430, 80, 50));
+			columnsPositions.push(new THREE.Vector3(-430, 80, 330));
+
+			columnsPositions.push(new THREE.Vector3(330, 80, -230));
+			columnsPositions.push(new THREE.Vector3(330, 80, 50));
+			columnsPositions.push(new THREE.Vector3(330, 80, 330));
+
+			columnsPositions.push(new THREE.Vector3(-50, 80, -230));
+			columnsPositions.push(new THREE.Vector3(-50, 80, 330));
+
+			var columnGeometry = new THREE.BoxBufferGeometry(20, 160, 20);
+			var columnMaterial = new THREE.MeshLambertMaterial({
+				color: 0xffffff,
+				envMap: textureCube,
+				opacity: 0.85,
+				transparent: true,
+				combine: THREE.MixOperation,
+				reflectivity: 0.825
+			});
+			for (var i = 0; i < columnsPositions.length; i++) {
+				temp = new THREE.Mesh(columnGeometry, columnMaterial);
+				temp.position.set(columnsPositions[i].x, columnsPositions[i].y, columnsPositions[i].z);
+				castShadowObj(temp);
+				scene.add(temp);
+			}
+
+			//中间玻璃
+			r = "data/";
+			urls = [r + "posx.jpg", r + "negx.jpg",
+				r + "posy.jpg", r + "negz.jpg",
+				r + "posz.jpg", r + "negy.jpg"
+			];
+			textureCube = THREE.ImageUtils.loadTextureCube(urls);
+			textureCube.format = THREE.RGBFormat;
+			var glassGeometry = new THREE.BoxBufferGeometry(720, 160, 10);
+			var glassMaterial = new THREE.MeshLambertMaterial({
+				opacity: .6,
+				transparent: true,
+				envMap: textureCube,
+				combine: THREE.MultiplyOperation
+			});
+			var glassWall = new THREE.Mesh(glassGeometry, glassMaterial);
+			glassWall.position.set(-10, 70, -45);
+			castShadowObj(glassWall);
+			scene.add(glassWall);
+
+			gltfLoader.load('data/computerRoom/door.gltf', function (gltf) {
+				temp = gltf.scene;
+				temp.position.set(-445, 4, 200);
+				temp.scale.set(60, 60, 160);
+				temp.castShadow = true;
+				temp.rotation.y = -Math.PI / 2;
+				castShadowObj(temp);
+				scene.add(temp);
+			}, undefined, undefined);
+
+			gltfLoader.load('data/computerRoom/glassDoor.gltf', function (gltf) {
+				temp = gltf.scene;
+				temp.position.set(-406, 0, -45);
+				temp.scale.set(60, 72, 60);
+				temp.castShadow = true;
+				castShadowObj(temp);
+				scene.add(temp);
+			}, undefined, undefined);
+
+			var deskPositions = [];
+			deskPositions.push(new THREE.Vector3(-120, 0, -190));
+			deskPositions.push(new THREE.Vector3(-240, 0, -190));
+
+			deskPositions.push(new THREE.Vector3(20, 0, -190));
+			deskPositions.push(new THREE.Vector3(140, 0, -190));
+			deskPositions.push(new THREE.Vector3(260, 0, -190));
+			gltfLoader.load('data/computerRoom/desk.gltf', function (gltf) {
+				for (var i = 0; i < columnsPositions.length; i++) {
+					temp = gltf.scene.clone();
+					temp.position.set(deskPositions[i].x, deskPositions[i].y, deskPositions[i].z);
+					temp.scale.set(80, 80, 80);
+					temp.castShadow = true;
+					castShadowObj(temp);
+					scene.add(temp);
+				}
+			}, undefined, undefined);
+
+			var cabinetPositions = [];
+			cabinetPositions.push(new THREE.Vector3(220, 0, 90));
+			cabinetPositions.push(new THREE.Vector3(140, 0, 90));
+			cabinetPositions.push(new THREE.Vector3(60, 0, 90));
+			cabinetPositions.push(new THREE.Vector3(-20, 0, 90));
+			cabinetPositions.push(new THREE.Vector3(-100, 0, 90));
+
+			cabinetPositions.push(new THREE.Vector3(220, 0, 230));
+			cabinetPositions.push(new THREE.Vector3(140, 0, 230));
+			cabinetPositions.push(new THREE.Vector3(60, 0, 230));
+			cabinetPositions.push(new THREE.Vector3(-20, 0, 230));
+			cabinetPositions.push(new THREE.Vector3(-100, 0, 230));
+			gltfLoader.load('data/computerRoom/cabinet.gltf', function (gltf) {
+				for (var i = 0; i < cabinetPositions.length; i++) {
+					temp = gltf.scene.clone();
+					temp.position.set(cabinetPositions[i].x, cabinetPositions[i].y, cabinetPositions[i].z);
+					temp.scale.set(60, 60, 60);
+					castShadowObj(temp);
+					scene.add(temp);
+				}
+			}, undefined, undefined);
+
+			gltfLoader.load('data/computerRoom/airConditioner.gltf', function (gltf) {
+				temp = gltf.scene;
+				temp.position.set(330, 0, 150);
+				temp.scale.set(100, 100, 100);
+				temp.name = 'airConditioner';
+				castShadowObj(temp);
+				temp.rotation.y = -Math.PI / 2;
+				scene.add(temp);
+			}, undefined, undefined);
+			gltfLoader.load('data/computerRoom/airConditioner.gltf', function (gltf) {
+				temp = gltf.scene;
+				temp.position.set(330, 0, 150);
+				temp.scale.set(100, 100, 100);
+				temp.name = 'airConditioner';
+				castShadowObj(temp);
+				temp.rotation.y = -Math.PI / 2;
+				scene.add(temp);
+			}, undefined, undefined);
+			gltfLoader.load('data/computerRoom/powerCabinet.gltf', function (gltf) {
+				temp = gltf.scene;
+				temp.position.set(330, 0, 260);
+				temp.scale.set(80, 80, 80);
+				temp.name = 'powerCabinet';
+				castShadowObj(temp);
+				temp.rotation.y = -Math.PI / 2;
+				scene.add(temp);
+			}, undefined, undefined);
+			gltfLoader.load('data/computerRoom/fireHydrant.gltf', function (gltf) {
+				temp = gltf.scene;
+				temp.position.set(-450, 0, 290);
+				temp.scale.set(80, 80, 80);
+				temp.name = 'fireHydrant';
+				castShadowObj(temp);
+				temp.rotation.y = Math.PI / 2;
+				scene.add(temp);
+			}, undefined, undefined);
+			gltfLoader.load('data/computerRoom/switchCabinet.gltf', function (gltf) {
+				temp = gltf.scene;
+				temp.position.set(-240, 0, 90);
+				temp.scale.set(100, 80, 80);
+				temp.name = 'switchCabinet';
+				castShadowObj(temp);
+				scene.add(temp);
+			}, undefined, undefined);
+
+
+			var switchItemPositions = [];
+			switchItemPositions.push(new THREE.Vector3(-240, 128, 130));
+			switchItemPositions.push(new THREE.Vector3(-240, 98, 130));
+			switchItemPositions.push(new THREE.Vector3(-240, 68, 130));
+			switchItemPositions.push(new THREE.Vector3(-240, 38, 130));
+
+			gltfLoader.load('data/computerRoom/switchItem.gltf', function (gltf) {
+				for (var i = 0; i < switchItemPositions.length; i++) {
+					temp = gltf.scene.clone();
+					temp.position.set(switchItemPositions[i].x, switchItemPositions[i].y, switchItemPositions[i].z);
+					temp.scale.set(180, 180, 180);
+					castShadowObj(temp);
+					temp.name = 'switchItem';
+					scene.add(temp);
+				}
+			}, undefined, undefined);
+
+			var pottedPlantPositions = [];
+			pottedPlantPositions.push(new THREE.Vector3(-620, 0, -220));
+			pottedPlantPositions.push(new THREE.Vector3(-620, 0, 50));
+			pottedPlantPositions.push(new THREE.Vector3(-620, 0, 320));
+
+			pottedPlantPositions.push(new THREE.Vector3(520, 0, -220));
+			pottedPlantPositions.push(new THREE.Vector3(520, 0, 50));
+			pottedPlantPositions.push(new THREE.Vector3(520, 0, 320));
+
+			gltfLoader.load('data/computerRoom/pottedPlant.gltf', function (gltf) {
+				for (var i = 0; i < pottedPlantPositions.length; i++) {
+					temp = gltf.scene.clone();
+					temp.position.set(pottedPlantPositions[i].x, pottedPlantPositions[i].y, pottedPlantPositions[i]
+						.z);
+					temp.scale.set(120, 120, 120);
+					castShadowObj(temp);
+					scene.add(temp);
+				}
+			}, undefined, undefined);
 		}
 
 		function initGround() {
@@ -192,7 +539,7 @@
 			ground.material.map.wrapS = THREE.RepeatWrapping;
 			ground.material.map.wrapT = THREE.RepeatWrapping;
 			ground.position.set(0, 0, 0);
-			ground.receiveShadow = true;
+			castShadowObj(ground);
 			scene.add(ground);
 
 			//外围地面
@@ -210,7 +557,7 @@
 					map: texture
 				});
 				var mesh = new THREE.Mesh(geometry, material);
-				mesh.receiveShadow = true;
+				castShadowObj(mesh);
 				mesh.position.set(0, 1, 600);
 				scene.add(mesh);
 			});
@@ -229,29 +576,32 @@
 				});
 
 				treeGround1 = new THREE.Mesh(geometry, material);
-				treeGround1.receiveShadow = true;
+				castShadowObj(treeGround1);
 				treeGround1.position.set(0, 1, 475);
 				scene.add(treeGround1);
 
 				treeGround2 = new THREE.Mesh(geometry2, material);
 				treeGround2.position.set(650, 1, -125);
 				treeGround2.rotation.y = Math.PI / 2;
-				treeGround2.receiveShadow = true;
+				castShadowObj(treeGround2);
 				scene.add(treeGround2);
 			});
 			//场景周围背景
 			var envMap = new THREE.CubeTextureLoader().load([
-				'textures/cube/skybox/posx.jpg', // right
-				'textures/cube/skybox/negx.jpg', // left
-				'textures/cube/skybox/posy.jpg', // top
-				'textures/cube/skybox/negy.jpg', // bottom
-				'textures/cube/skybox/posz.jpg', // back
-				'textures/cube/skybox/negz.jpg' // front
+				'data/posx.jpg', // right
+				'data/negx.jpg', // left
+				'data/posy.jpg', // top
+				'data/negy.jpg', // bottom
+				'data/posz.jpg', // back
+				'data/negz.jpg' // front
 			]);
 			envMap.format = THREE.RGBFormat;
-
 			scene.background = envMap;
 
+			/* var axes = new THREE.AxesHelper(2000);
+			//红色代表 X 轴. 绿色代表 Y 轴. 蓝色代表 Z 轴.
+			container.append( "<div class='tip'>红色代表 X 轴. 绿色代表 Y 轴. 蓝色代表 Z 轴.</div>" );
+			scene.add(axes); */
 		}
 
 		function initOuterScene() {
@@ -264,8 +614,7 @@
 				bird.position.set(-100, 200, 450);
 				bird.rotation.y = -1;
 
-				bird.castShadow = true;
-				bird.receiveShadow = true;
+				castShadowObj(bird);
 
 				scene.add(bird);
 
@@ -279,28 +628,28 @@
 				temp = gltf.scene;
 				temp.position.set(300, 0, 650);
 				temp.scale.set(60, 60, 60);
-				temp.castShadow = true;
+				castShadowObj(temp);
 				scene.add(temp);
 			}, undefined, undefined);
 			gltfLoader.load('data/bench.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(250, 0, 650);
 				temp.scale.set(80, 80, 80);
-				temp.castShadow = temp.receiveShadow = true;
+				castShadowObj(temp);
 				scene.add(temp);
 			}, undefined, undefined);
 			gltfLoader.load('data/man.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(370, 0, 650);
 				temp.scale.set(60, 60, 60);
-				temp.castShadow = temp.receiveShadow = true;
+				castShadowObj(temp);
 				scene.add(temp);
 			}, undefined, undefined);
 			gltfLoader.load('data/boy.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(410, 0, 660);
 				temp.scale.set(60, 60, 60);
-				temp.castShadow = temp.receiveShadow = true;
+				castShadowObj(temp);
 				temp.rotation.y = -Math.PI / 4;
 				scene.add(temp);
 			}, undefined, undefined);
@@ -320,7 +669,7 @@
 					temp = gltf.scene.clone();
 					temp.position.set(enclosurePositions[i].x, enclosurePositions[i].y, enclosurePositions[i].z);
 					temp.scale.set(40, 40, 40);
-					temp.castShadow = temp.receiveShadow = true;
+					castShadowObj(temp);
 					if (i > 3) temp.rotation.y = -Math.PI / 2;
 					scene.add(temp);
 				}
@@ -336,87 +685,104 @@
 				});
 				grassGround = new THREE.Mesh(geometry, material);
 				grassGround.position.set(-195, 2, 600);
-				grassGround.receiveShadow = true;
+				castShadowObj(grassGround);
 				scene.add(grassGround);
 
 				geometry = new THREE.BoxBufferGeometry(425, 1, 410);
 				grassGround = new THREE.Mesh(geometry, material);
 				grassGround.position.set(-485, 1, -500);
-				grassGround.receiveShadow = true;
+				castShadowObj(grassGround);
 				scene.add(grassGround);
 			});
 			gltfLoader.load('data/sakura.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(-200, 20, 600);
 				temp.scale.set(30, 30, 30);
-				temp.castShadow = temp.receiveShadow = true;
+				castShadowObj(temp);
 				scene.add(temp);
 			}, undefined, undefined);
 			gltfLoader.load('data/trash.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(50, 20, 640);
 				temp.scale.set(50, 50, 50);
-				temp.castShadow = temp.receiveShadow = true;
+				castShadowObj(temp);
 				scene.add(temp);
 			}, undefined, undefined);
 			gltfLoader.load('data/bike.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(-370, 1, 610);
 				temp.scale.set(50, 50, 50);
-				temp.castShadow = temp.receiveShadow = true;
+				castShadowObj(temp);
 				scene.add(temp);
 			}, undefined, undefined);
 			gltfLoader.load('data/bike2.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(-425, 1, 610);
 				temp.scale.set(50, 50, 50);
-				temp.castShadow = temp.receiveShadow = true;
+				castShadowObj(temp);
 				scene.add(temp);
 			}, undefined, undefined);
 			gltfLoader.load('data/bike_road.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(-470, 2, 610);
 				temp.scale.set(20, 5, 25);
-				temp.castShadow = temp.receiveShadow = true;
+				castShadowObj(temp);
 				scene.add(temp);
 			}, undefined, undefined);
 
 			gltfLoader.load('data/building.gltf', function (gltf) {
-				temp = gltf.scene;
-				temp.position.set(-50, 0, 0);
-				temp.scale.set(35, 35, 35);
-				temp.castShadow = temp.receiveShadow = true;
-				scene.add(temp);
+				building = gltf.scene;
+				building.position.set(-50, 0, 0);
+				building.oriX = -50;
+				building.oriScale = 35;
+				building.scale.set(35, 35, 35);
+				castShadowObj(building);
+				scene.add(building);
+
+				var geometry = new THREE.BoxBufferGeometry(1000, 700, 580);
+				var material = new THREE.MeshLambertMaterial({
+					transparent: true,
+					opacity: 0,
+					color: 0x666666,
+					emissive: 0xff0000
+				});
+				var opacityBox = new THREE.Mesh(geometry, material);
+				opacityBox.name = 'building';
+				opacityBox.position.set(-50, 350, 0);
+				scene.add(opacityBox);
 
 				var geometry = new THREE.BoxBufferGeometry(1000, 100, 580);
 				var material = new THREE.MeshPhongMaterial({
 					color: 0x555555
 				});
-				var bottomBox = new THREE.Mesh(geometry, material);
-				bottomBox.receiveShadow = true;
-				bottomBox.position.set(-50, 50, 0);
-				scene.add(bottomBox);
+				buildingBottom = new THREE.Mesh(geometry, material);
+				castShadowObj(buildingBottom);
+				buildingBottom.position.set(-50, 50, 0);
+				buildingBottom.oriX = -50;
+				buildingBottom.oriY = 50;
+				buildingBottom.oriScale = 1;
+				scene.add(buildingBottom);
 			}, undefined, undefined);
 
 			gltfLoader.load('data/pool.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(100, 2, -500);
 				temp.scale.set(16, 16, 16);
-				temp.castShadow = temp.receiveShadow = true;
+				castShadowObj(temp);
 				scene.add(temp);
 			}, undefined, undefined);
 			gltfLoader.load('data/tree2.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(-600, 2, -480);
 				temp.scale.set(30, 30, 30);
-				temp.castShadow = temp.receiveShadow = true;
+				castShadowObj(temp);
 				scene.add(temp);
 			}, undefined, undefined);
 			gltfLoader.load('data/tree3.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(-400, 2, -460);
 				temp.scale.set(24, 24, 24);
-				temp.castShadow = temp.receiveShadow = true;
+				castShadowObj(temp);
 				scene.add(temp);
 			}, undefined, undefined);
 
@@ -437,7 +803,7 @@
 					temp = gltf.scene.clone();
 					temp.position.set(bambooPositions[i].x, bambooPositions[i].y, bambooPositions[i].z);
 					temp.scale.set(40, 40, 40);
-					temp.castShadow = temp.receiveShadow = true;
+					castShadowObj(temp);
 					treeBottomGroup.push(temp);
 					scene.add(temp);
 				}
@@ -468,7 +834,7 @@
 					temp = gltf.scene.clone();
 					temp.position.set(flowerPositions[i].x, flowerPositions[i].y, flowerPositions[i].z);
 					temp.scale.set(80, 80, 80);
-					temp.castShadow = temp.receiveShadow = true;
+					castShadowObj(temp);
 					treeBottomGroup.push(temp);
 					scene.add(temp);
 				}
@@ -490,16 +856,20 @@
 			treePositions.push(new THREE.Vector3(-250, 0, 475));
 			treePositions.push(new THREE.Vector3(-550, 0, 475));
 
+			/* var geometry = new THREE.BoxBufferGeometry( 50, 50, 50 );
+			var material = new THREE.MeshLambertMaterial( { color: 0x555555 } );
+			var bottomBox = new THREE.Mesh( geometry, material );
+			bottomBox.position.set( -400, 50, 445 );
+			bottomBox.castShadow = bottomBox.receiveShadow = true;
+			scene.add( bottomBox ); */
+
 			gltfLoader.load('data/tree.gltf', function (gltf) {
 				for (var i = 0; i < treePositions.length; i++) {
 					temp = gltf.scene.children[0].clone();
-					var meshs = gltf.scene.children[0].children[1].children;
-					for (var j = 0; j < meshs.length; j++) {
-						meshs[j].castShadow = meshs[j].receiveShadow = true;
-					}
+					castShadowObj(temp);
 					temp.position.set(treePositions[i].x + 5, treePositions[i].y, treePositions[i].z);
 					temp.scale.set(20, 20, 20);
-					temp.castShadow = temp.receiveShadow = true;
+					castShadowObj(temp);
 					treeBottomGroup.push(temp);
 					scene.add(temp);
 				}
@@ -511,7 +881,7 @@
 					tempTreeBottom = gltf.scene.clone();
 					tempTreeBottom.position.set(treePositions[i].x, treePositions[i].y, treePositions[i].z);
 					tempTreeBottom.scale.set(20, 20, 20);
-					tempTreeBottom.castShadow = tempTreeBottom.receiveShadow = true;
+					castShadowObj(tempTreeBottom);
 					treeBottomGroup.push(tempTreeBottom);
 					scene.add(tempTreeBottom);
 				}
@@ -524,7 +894,7 @@
 			// 继续执行下一个1/60秒的动画
 			requestAnimationFrame(animate);
 			render();
-			changeFov();
+			//changeFov();
 
 		}
 
@@ -541,6 +911,7 @@
 			var timer = 0.0001 * Date.now();
 			var delta = clock.getDelta();
 			controls.update(delta);
+			updateCamera();
 			if (bird) {
 				var currentX = Math.sin(timer * 7) * 400;
 				if (currentX > bird.position.x) {
