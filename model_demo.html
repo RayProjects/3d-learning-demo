@@ -6,7 +6,16 @@
 		body {
 			margin: 0;
 		}
-
+		.landscape{
+			    background: url(data/rotate.png) no-repeat;
+				width: 400px;
+				height: 400px;
+				background-size: cover;
+				position: absolute;
+				top: 50%;
+				left: 50%;
+				transform: translate3d(-50%, -50%, 0);
+		}
 		canvas {
 			width: 100%;
 			height: 100%
@@ -62,6 +71,8 @@
 
 			initControl();
 
+			listenScreenResize();
+
 			window.addEventListener('resize', onWindowResize, false);
 
 			createUI();
@@ -69,6 +80,24 @@
 
 		}
 
+		function listenScreenResize(){
+			var evt = "onorientationchange" in window ? "orientationchange" : "resize";
+			window.addEventListener(evt, function() {
+				setTimeout( function(){
+					judgeLandscape(true);
+				}  , 300 );
+			}, false);
+			judgeLandscape();
+		}
+		function judgeLandscape(isResize){
+			var width = screen.width;
+			var height =  screen.height;
+			if( width < height ){
+				$("body").empty().append("<div class='landscape'></div>")
+			} else if(isResize){
+				location.href=location.href;
+			}
+		}
 		function initBasic() {
 
 			scene = new THREE.Scene();
@@ -129,17 +158,6 @@
 			pointLight.penumbra = 0.8;
 			pointLight.decay = 2;
 			scene.add(pointLight);
-
-			/* pointLight = new THREE.DirectionalLight( 0xffffff, 1.5 );
-			pointLight.position.set( 0,40,0 );
-			pointLight.position.multiplyScalar( 10 );
-			pointLight.castShadow = true;
-
-			pointLight.shadow.mapSize.width = 4048;
-			pointLight.shadow.mapSize.height = 4048;
-
-			scene.add( pointLight ); */
-
 
 
 			pointLightHeper = new THREE.SpotLightHelper(pointLight, 10);
@@ -231,8 +249,6 @@
 			scene.background = envMap;
 
 			var axes = new THREE.AxesHelper(2000);
-			//红色代表 X 轴. 绿色代表 Y 轴. 蓝色代表 Z 轴.
-			container.append("<div class='tip'>Red for the X axis. Green for the Y axis. Blue for the Z axis.</div>");
 			scene.add(axes);
 		}
 
@@ -471,13 +487,6 @@
 			treePositions.push(new THREE.Vector3(50, 0, 475));
 			treePositions.push(new THREE.Vector3(-250, 0, 475));
 			treePositions.push(new THREE.Vector3(-550, 0, 475));
-
-			/* var geometry = new THREE.BoxBufferGeometry( 50, 50, 50 );
-			var material = new THREE.MeshLambertMaterial( { color: 0x555555 } );
-			var bottomBox = new THREE.Mesh( geometry, material );
-			bottomBox.position.set( -400, 50, 445 );
-			bottomBox.castShadow = bottomBox.receiveShadow = true;
-			scene.add( bottomBox ); */
 
 			gltfLoader.load('data/tree.gltf', function (gltf) {
 				for (var i = 0; i < treePositions.length; i++) {
