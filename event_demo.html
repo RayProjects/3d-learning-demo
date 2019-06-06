@@ -1,7 +1,7 @@
 <html>
 
 <head>
-	<title>My first three.js app</title>
+	<title>Event Demo</title>
 	<style>
 		body {
 			margin: 0;
@@ -710,7 +710,7 @@
 			var loader = new THREE.GLTFLoader();
 			loader.setDRACOLoader(new THREE.DRACOLoader());
 			index = 0;
-			loader.load('test/LittlestTokyo.glb', function (gltf) {
+			loader.load('data/LittlestTokyo.glb', function (gltf) {
 				building = gltf.scene;
 				building.position.set(0, 200, 0);
 				building.scale.set(1, 1, 1);

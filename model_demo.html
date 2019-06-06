@@ -1,7 +1,7 @@
 <html>
 
 <head>
-	<title>My first three.js app</title>
+	<title>Model Demo</title>
 	<style>
 		body {
 			margin: 0;
@@ -158,7 +158,7 @@
 		function initGround() {
 
 			//基础地面
-			var gt = new THREE.TextureLoader().load("test/plane.jpg");
+			var gt = new THREE.TextureLoader().load("data/plane.jpg");
 			var gg = new THREE.BoxBufferGeometry(1400, 0, 1400);
 			var gm = new THREE.MeshPhongMaterial({
 				color: 0xffffff,
@@ -175,7 +175,7 @@
 
 			//外围地面
 
-			new THREE.TextureLoader().load('test/stone_plane.jpg', function (texture) {
+			new THREE.TextureLoader().load('data/stone_plane.jpg', function (texture) {
 				var geometry = new THREE.BoxBufferGeometry(1400, 0, 200);
 				texture.repeat.set(5, 5);
 				texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
@@ -194,7 +194,7 @@
 			});
 
 
-			new THREE.TextureLoader().load('test/tree_plane.jpg', function (texture) {
+			new THREE.TextureLoader().load('data/tree_plane.jpg', function (texture) {
 				var geometry = new THREE.BoxBufferGeometry(1400, 0, 50);
 				var geometry2 = new THREE.BoxBufferGeometry(1150, 0, 100);
 				texture.repeat.set(20, 1);
@@ -257,28 +257,28 @@
 
 			});
 
-			gltfLoader.load('test/busStation.gltf', function (gltf) {
+			gltfLoader.load('data/busStation.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(300, 0, 650);
 				temp.scale.set(60, 60, 60);
 				temp.castShadow = true;
 				scene.add(temp);
 			}, undefined, undefined);
-			gltfLoader.load('test/bench.gltf', function (gltf) {
+			gltfLoader.load('data/bench.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(250, 0, 650);
 				temp.scale.set(80, 80, 80);
 				temp.castShadow = temp.receiveShadow = true;
 				scene.add(temp);
 			}, undefined, undefined);
-			gltfLoader.load('test/man.gltf', function (gltf) {
+			gltfLoader.load('data/man.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(370, 0, 650);
 				temp.scale.set(60, 60, 60);
 				temp.castShadow = temp.receiveShadow = true;
 				scene.add(temp);
 			}, undefined, undefined);
-			gltfLoader.load('test/boy.gltf', function (gltf) {
+			gltfLoader.load('data/boy.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(410, 0, 660);
 				temp.scale.set(60, 60, 60);
@@ -297,7 +297,7 @@
 			enclosurePositions.push(new THREE.Vector3(-290, 0, 600));
 			enclosurePositions.push(new THREE.Vector3(-100, 0, 600));
 
-			gltfLoader.load('test/enclosure.gltf', function (gltf) {
+			gltfLoader.load('data/enclosure.gltf', function (gltf) {
 				for (var i = 0; i < enclosurePositions.length; i++) {
 					temp = gltf.scene.clone();
 					temp.position.set(enclosurePositions[i].x, enclosurePositions[i].y, enclosurePositions[i].z);
@@ -307,7 +307,7 @@
 					scene.add(temp);
 				}
 			}, undefined, undefined);
-			new THREE.TextureLoader().load('test/grass.jpg', function (texture) {
+			new THREE.TextureLoader().load('data/grass.jpg', function (texture) {
 				var geometry = new THREE.BoxBufferGeometry(190, 1, 100);
 				texture.repeat.set(1, 1);
 				texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
@@ -327,35 +327,35 @@
 				grassGround.receiveShadow = true;
 				scene.add(grassGround);
 			});
-			gltfLoader.load('test/sakura.gltf', function (gltf) {
+			gltfLoader.load('data/sakura.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(-200, 20, 600);
 				temp.scale.set(30, 30, 30);
 				temp.castShadow = temp.receiveShadow = true;
 				scene.add(temp);
 			}, undefined, undefined);
-			gltfLoader.load('test/trash.gltf', function (gltf) {
+			gltfLoader.load('data/trash.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(50, 20, 640);
 				temp.scale.set(50, 50, 50);
 				temp.castShadow = temp.receiveShadow = true;
 				scene.add(temp);
 			}, undefined, undefined);
-			gltfLoader.load('test/bike.gltf', function (gltf) {
+			gltfLoader.load('data/bike.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(-370, 1, 610);
 				temp.scale.set(50, 50, 50);
 				temp.castShadow = temp.receiveShadow = true;
 				scene.add(temp);
 			}, undefined, undefined);
-			gltfLoader.load('test/bike2.gltf', function (gltf) {
+			gltfLoader.load('data/bike2.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(-425, 1, 610);
 				temp.scale.set(50, 50, 50);
 				temp.castShadow = temp.receiveShadow = true;
 				scene.add(temp);
 			}, undefined, undefined);
-			gltfLoader.load('test/bike_road.gltf', function (gltf) {
+			gltfLoader.load('data/bike_road.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(-470, 2, 610);
 				temp.scale.set(20, 5, 25);
@@ -363,7 +363,7 @@
 				scene.add(temp);
 			}, undefined, undefined);
 
-			gltfLoader.load('test/building.gltf', function (gltf) {
+			gltfLoader.load('data/building.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(-50, 0, 0);
 				temp.scale.set(35, 35, 35);
@@ -380,21 +380,21 @@
 				scene.add(bottomBox);
 			}, undefined, undefined);
 
-			gltfLoader.load('test/pool.gltf', function (gltf) {
+			gltfLoader.load('data/pool.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(100, 2, -500);
 				temp.scale.set(16, 16, 16);
 				temp.castShadow = temp.receiveShadow = true;
 				scene.add(temp);
 			}, undefined, undefined);
-			gltfLoader.load('test/tree2.gltf', function (gltf) {
+			gltfLoader.load('data/tree2.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(-600, 2, -480);
 				temp.scale.set(30, 30, 30);
 				temp.castShadow = temp.receiveShadow = true;
 				scene.add(temp);
 			}, undefined, undefined);
-			gltfLoader.load('test/tree3.gltf', function (gltf) {
+			gltfLoader.load('data/tree3.gltf', function (gltf) {
 				temp = gltf.scene;
 				temp.position.set(-400, 2, -460);
 				temp.scale.set(24, 24, 24);
@@ -414,7 +414,7 @@
 			bambooPositions.push(new THREE.Vector3(-570, 2, -650));
 			bambooPositions.push(new THREE.Vector3(-620, 2, -650));
 			bambooPositions.push(new THREE.Vector3(-650, 2, -650));
-			gltfLoader.load('test/bamboo.gltf', function (gltf) {
+			gltfLoader.load('data/bamboo.gltf', function (gltf) {
 				for (var i = 0; i < bambooPositions.length; i++) {
 					temp = gltf.scene.clone();
 					temp.position.set(bambooPositions[i].x, bambooPositions[i].y, bambooPositions[i].z);
@@ -445,7 +445,7 @@
 			flowerPositions.push(new THREE.Vector3(-570, 2, -640));
 			flowerPositions.push(new THREE.Vector3(-620, 2, -520));
 			flowerPositions.push(new THREE.Vector3(-650, 2, -480));
-			gltfLoader.load('test/flower.gltf', function (gltf) {
+			gltfLoader.load('data/flower.gltf', function (gltf) {
 				for (var i = 0; i < flowerPositions.length; i++) {
 					temp = gltf.scene.clone();
 					temp.position.set(flowerPositions[i].x, flowerPositions[i].y, flowerPositions[i].z);
@@ -479,7 +479,7 @@
 			bottomBox.castShadow = bottomBox.receiveShadow = true;
 			scene.add( bottomBox ); */
 
-			gltfLoader.load('test/tree.gltf', function (gltf) {
+			gltfLoader.load('data/tree.gltf', function (gltf) {
 				for (var i = 0; i < treePositions.length; i++) {
 					temp = gltf.scene.children[0].clone();
 					var meshs = gltf.scene.children[0].children[1].children;
@@ -495,7 +495,7 @@
 			}, undefined, function (e) {
 				console.error(e);
 			});
-			gltfLoader.load('test/tree_bottom.gltf', function (gltf) {
+			gltfLoader.load('data/tree_bottom.gltf', function (gltf) {
 				for (var i = 0; i < treePositions.length; i++) {
 					tempTreeBottom = gltf.scene.clone();
 					tempTreeBottom.position.set(treePositions[i].x, treePositions[i].y, treePositions[i].z);
