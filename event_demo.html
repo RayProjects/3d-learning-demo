@@ -6,16 +6,18 @@
 		body {
 			margin: 0;
 		}
-		.landscape{
-			    background: url(data/rotate.png) no-repeat;
-				width: 400px;
-				height: 400px;
-				background-size: cover;
-				position: absolute;
-				top: 50%;
-				left: 50%;
-				transform: translate3d(-50%, -50%, 0);
+
+		.landscape {
+			background: url(data/rotate.png) no-repeat;
+			width: 400px;
+			height: 400px;
+			background-size: cover;
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate3d(-50%, -50%, 0);
 		}
+
 		canvas {
 			position: fixed;
 			top: 0;
@@ -277,7 +279,7 @@
 		function init() {
 
 			initBasic(); //基础对象
-			
+
 			initCustomTip();
 
 			initHelp(); //辅助网格及坐标轴
@@ -297,7 +299,7 @@
 			initControl(); //控制器
 
 			listenScreenResize();
-			
+
 			window.addEventListener('resize', onWindowResize, false);
 
 			document.addEventListener('mousemove', onDocumentMouseMove, false);
@@ -306,24 +308,27 @@
 
 			animate();
 		}
-		function listenScreenResize(){
+
+		function listenScreenResize() {
 			var evt = "onorientationchange" in window ? "orientationchange" : "resize";
-			window.addEventListener(evt, function() {
-				setTimeout( function(){
+			window.addEventListener(evt, function () {
+				setTimeout(function () {
 					judgeLandscape(true);
-				}  , 300 );
+				}, 300);
 			}, false);
 			judgeLandscape();
 		}
-		function judgeLandscape(isResize){
+
+		function judgeLandscape(isResize) {
 			var width = screen.width;
-			var height =  screen.height;
-			if( width < height ){
+			var height = screen.height;
+			if (width < height) {
 				$("body").empty().append("<div class='landscape'></div>")
-			} else if(isResize){
-				location.href=location.href;
+			} else if (isResize) {
+				location.href = location.href;
 			}
 		}
+
 		function initBasic() {
 
 			scene = new THREE.Scene();
@@ -818,7 +823,7 @@
 
 				shapes.push.apply(shapes, holeShapes);
 
-			}); 
+			});
 
 		}
 
@@ -880,10 +885,6 @@
 			plane.receiveShadow = true;
 			scene.add(plane);
 
-			//坐标轴辅助
-			var axes = new THREE.AxesHelper(2000);
-			//红色代表 X 轴. 绿色代表 Y 轴. 蓝色代表 Z 轴.
-			scene.add(axes);
 		}
 
 		function initLines() {

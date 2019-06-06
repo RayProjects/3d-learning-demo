@@ -6,16 +6,18 @@
 		body {
 			margin: 0;
 		}
-		.landscape{
-			    background: url(data/rotate.png) no-repeat;
-				width: 400px;
-				height: 400px;
-				background-size: cover;
-				position: absolute;
-				top: 50%;
-				left: 50%;
-				transform: translate3d(-50%, -50%, 0);
+
+		.landscape {
+			background: url(data/rotate.png) no-repeat;
+			width: 400px;
+			height: 400px;
+			background-size: cover;
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate3d(-50%, -50%, 0);
 		}
+
 		canvas {
 			width: 100%;
 			height: 100%
@@ -80,24 +82,26 @@
 
 		}
 
-		function listenScreenResize(){
+		function listenScreenResize() {
 			var evt = "onorientationchange" in window ? "orientationchange" : "resize";
-			window.addEventListener(evt, function() {
-				setTimeout( function(){
+			window.addEventListener(evt, function () {
+				setTimeout(function () {
 					judgeLandscape(true);
-				}  , 300 );
+				}, 300);
 			}, false);
 			judgeLandscape();
 		}
-		function judgeLandscape(isResize){
+
+		function judgeLandscape(isResize) {
 			var width = screen.width;
-			var height =  screen.height;
-			if( width < height ){
+			var height = screen.height;
+			if (width < height) {
 				$("body").empty().append("<div class='landscape'></div>")
-			} else if(isResize){
-				location.href=location.href;
+			} else if (isResize) {
+				location.href = location.href;
 			}
 		}
+
 		function initBasic() {
 
 			scene = new THREE.Scene();
@@ -248,8 +252,6 @@
 
 			scene.background = envMap;
 
-			var axes = new THREE.AxesHelper(2000);
-			scene.add(axes);
 		}
 
 		function initOuterScene() {
