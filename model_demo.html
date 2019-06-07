@@ -97,11 +97,12 @@
 		function judgeLandscape(isResize) {
 			width = screen.width;
 			height = screen.height;
+			if (isResize) {
+				location.href = location.href;
+			}
 			if (width < height) {
 				$("body").empty().append("<div class='landscape'></div>");
 				return false;
-			} else if (isResize) {
-				location.href = location.href;
 			}
 			return true;
 		}
