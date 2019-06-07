@@ -78,7 +78,7 @@
 
 				animate();
 
-				$(document).click(onDocumentMouseDown);
+				$(document).on("tap", onDocumentMouseDown);
 
 			}
 
@@ -178,12 +178,7 @@
 				return;
 			}
 			lastClickTime = new Date().getTime();
-			if (temp.length) {
-				selectMesh = temp[0].object;
-				if (selectMesh.name == 'building') {
-					handleBuildingFocus();
-				}
-			}
+			handleBuildingFocus();
 		}
 
 		function handleBuildingFocus() {
