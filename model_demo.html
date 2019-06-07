@@ -49,28 +49,27 @@
 
 		function init() {
 
-			listenScreenResize();
+			if (listenScreenResize) {
 
-			initBasic();
+				initBasic();
 
-			initGround();
+				initGround();
 
-			initLight();
+				initLight();
 
-			initTree();
+				initTree();
 
-			initOuterScene();
+				initOuterScene();
 
-			initControl();
+				initControl();
 
+				window.addEventListener('resize', onWindowResize, false);
 
+				document.addEventListener('mousedown', onDocumentMouseDown, false);
 
-			window.addEventListener('resize', onWindowResize, false);
+				animate();
 
-			document.addEventListener('mousedown', onDocumentMouseDown, false);
-
-			//createUI();
-			animate();
+			}
 
 		}
 
@@ -81,7 +80,7 @@
 					judgeLandscape(true);
 				}, 300);
 			}, false);
-			judgeLandscape();
+			return judgeLandscape();
 		}
 
 		function judgeLandscape(isResize) {
@@ -89,9 +88,11 @@
 			var height = screen.height;
 			if (width < height) {
 				$("body").empty().append("<div class='landscape'></div>");
+				return false;
 			} else if (isResize) {
 				location.href = location.href;
 			}
+			return true;
 		}
 
 		function initBasic() {
