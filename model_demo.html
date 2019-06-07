@@ -53,7 +53,7 @@
 		var geometry, treeBottomGroup = [],
 			temp, gltfLoader, t = 0,
 			building, buildingBottom, selectMesh, current3VPoint, raycaster;
-		var des, body = $('body'),
+		var des, lastClickTime, body = $('body'),
 			width = body.width(),
 			height = body.height();
 		var clock = new THREE.Clock();
@@ -76,11 +76,9 @@
 
 				initControl();
 
-				window.addEventListener('resize', onWindowResize, false);
-
-				document.addEventListener('click', onDocumentMouseDown, false);
-
 				animate();
+
+				$(document).click(onDocumentMouseDown);
 
 			}
 
@@ -176,14 +174,14 @@
 			client.y = event.clientY;
 			var temp = pickupObjects(event);
 
+			if (new Date().getTime() - lastClickTime < 1000) {
+				return;
+			}
+			lastClickTime = new Date().getTime();
 			if (temp.length) {
 				selectMesh = temp[0].object;
 				if (selectMesh.name == 'building') {
-					var currentTime = new Date().getTime();
-					if (selectMesh.lastClickTime && (currentTime - selectMesh.lastClickTime) < 500) {
-						handleBuildingFocus();
-					}
-					selectMesh.lastClickTime = currentTime;
+					handleBuildingFocus();
 				}
 			}
 		}
