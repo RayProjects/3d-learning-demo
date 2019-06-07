@@ -78,7 +78,7 @@
 
 				window.addEventListener('resize', onWindowResize, false);
 
-				document.addEventListener('mousedown', onDocumentMouseDown, false);
+				document.addEventListener('click', onDocumentMouseDown, false);
 
 				animate();
 
@@ -614,7 +614,7 @@
 			/* var axes = new THREE.AxesHelper(2000);
 			//红色代表 X 轴. 绿色代表 Y 轴. 蓝色代表 Z 轴.
 			scene.add(axes); */
-			container.append("<div class='tip'>Double-click the building switch to 3D computer room</div>");
+			container.append("<div class='tip'>Click the building switch to 3D computer room</div>");
 		}
 
 		function initOuterScene() {
