@@ -53,7 +53,8 @@
 		var geometry, treeBottomGroup = [],
 			temp, gltfLoader, t = 0,
 			building, buildingBottom, selectMesh, current3VPoint, raycaster;
-		var des;
+		var des, width = screen.width,
+			height = screen.height;
 		var clock = new THREE.Clock();
 
 		init();
@@ -85,18 +86,17 @@
 		}
 
 		function listenScreenResize() {
-			var evt = "onorientationchange" in window ? "orientationchange" : "resize";
-			window.addEventListener(evt, function () {
-				setTimeout(function () {
+			setInterval(function () {
+				if (width != screen.width || height != screen.height) {
 					judgeLandscape(true);
-				}, 300);
-			}, false);
+				}
+			}, 500);
 			return judgeLandscape();
 		}
 
 		function judgeLandscape(isResize) {
-			var width = screen.width;
-			var height = screen.height;
+			width = screen.width;
+			height = screen.height;
 			if (width < height) {
 				$("body").empty().append("<div class='landscape'></div>");
 				return false;
