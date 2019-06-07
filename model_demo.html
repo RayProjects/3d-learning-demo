@@ -35,9 +35,6 @@
 
 
 	<script>
-		if (WEBGL.isWebGL2Available() === false) {
-			document.body.appendChild(WEBGL.getWebGL2ErrorMessage());
-		}
 		var container, helper;
 		var scene, camera, renderer;
 		var controls, mixer, mixers = [],
@@ -52,6 +49,8 @@
 
 		function init() {
 
+			listenScreenResize();
+
 			initBasic();
 
 			initGround();
@@ -64,7 +63,7 @@
 
 			initControl();
 
-			listenScreenResize();
+
 
 			window.addEventListener('resize', onWindowResize, false);
 
@@ -89,7 +88,7 @@
 			var width = screen.width;
 			var height = screen.height;
 			if (width < height) {
-				$("body").empty().append("<div class='landscape'></div>")
+				$("body").empty().append("<div class='landscape'></div>");
 			} else if (isResize) {
 				location.href = location.href;
 			}
